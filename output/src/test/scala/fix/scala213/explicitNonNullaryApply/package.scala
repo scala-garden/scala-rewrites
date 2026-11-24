@@ -1,4 +1,3 @@
-
 package fix.scala213
 
 // Definitions to test ExplicitNonNullaryApply against

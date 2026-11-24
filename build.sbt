@@ -20,7 +20,7 @@ inThisBuild(List(
 
 val rewrites = project.enablePlugins(ScalaNightlyPlugin).settings(
   moduleName := "scala-rewrites",
-  libraryDependencies += "ch.epfl.scala" %% "scalafix-rules" % scalafixVersion,
+  libraryDependencies += "ch.epfl.scala" %% "scalafix-rules" % scalafixVersion cross CrossVersion.full,
   publish / skip := false,
 )
 
