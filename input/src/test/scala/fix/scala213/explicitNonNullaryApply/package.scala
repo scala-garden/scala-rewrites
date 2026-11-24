@@ -1,4 +1,6 @@
-/**/
+/*
+rule = fix.scala213.ExplicitNonNullaryApply
+*/
 package fix.scala213
 
 // Definitions to test ExplicitNonNullaryApply against

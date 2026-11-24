@@ -58,7 +58,7 @@ final class ExplicitNonNullaryApply(global: LazyValue[ScalafixGlobal])
         if name.value != "##" // fast-track https://github.com/scala/scala/pull/8814
         if handled.add(name)
         if noArgs
-        if name.isReference
+        if !isDefinition(name)
         if !cond(name.parent) { case Some(Term.ApplyInfix.Initial(_, `name`, _, _)) => true }
         if !tree.parent.exists(_.is[Term.Eta]) // else rewrites `meth _` to `meth() _`, or requires running ExplicitNullaryEtaExpansion first
         // HACK: In certain cases, `Symbol.info` may throw `MissingSymbolException` due to some unknown reason
@@ -93,10 +93,17 @@ final class ExplicitNonNullaryApply(global: LazyValue[ScalafixGlobal])
       case t @ q"$meth(...$args)"           => fix(t, meth, true,          args.isEmpty)
     }.asPatch
   }
+  
+  // `Name.isReference` was removed from scalameta's internal API
+  private def isDefinition(name: Name): Boolean = name.parent match {
+    case Some(parent: Member) => parent.name == name
+    case _                    => false
+  }
 
-  // No PostfixSelect in Scalameta, so build one
+  // Scalameta parses `qual name` as Term.SelectPostfix, but also handle a Term.Select written without a dot
   private object PostfixSelect {
     def unapply(t: Tree)(implicit doc: SemanticDocument): Option[(Term, Term.Name)] = t match {
+      case Term.SelectPostfix(qual, name) => Some((qual, name))
       case Term.Select(qual, name) =>
         val tokenList = doc.tokenList
         val inBetweenSlice = tokenList.slice(tokenList.next(qual.tokens.last), name.tokens.head)
@@ -109,6 +116,7 @@ final class ExplicitNonNullaryApply(global: LazyValue[ScalafixGlobal])
   private def termName(term: Term): Option[Term.Name] = condOpt(term) {
     case name: Term.Name                 => name
     case Term.Select(_, name: Term.Name) => name
+    case Term.SelectPostfix(_, name)     => name
   }
 
   override def withConfiguration(config: Configuration) = {
